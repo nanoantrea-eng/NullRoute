@@ -68,7 +68,8 @@ This will automatically install dependencies and launch the backend.
 Manual Launch
 If you prefer the terminal:
 
-Bash
+Bash<img width="960" height="540" alt="Capture" src="https://github.com/user-attachments/assets/f827e1da-5c0e-4df4-ae0d-dc0e22c764a3" />
+
 npm install express
 node server.js
 Accessing the Tool
